@@ -5,7 +5,7 @@
 
 # このリポジトリのクローン
 ```
-git clone https://github.com/onolab-tmu/pytorch-introduction.git
+git clone https://github.com/ykinolab-tokai/pytorch-introduction.git
 ```
 
 # 準備
