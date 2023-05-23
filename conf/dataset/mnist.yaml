@@ -1,0 +1,4 @@
+name: mnist
+path: ./data/
+transforms: null
+download: True
