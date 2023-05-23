@@ -44,6 +44,11 @@ class Zip(Transform):
     
     def __call__(self, *args):
         outputs = []
-        for i in len(args):
+        for i in range(len(args)):
             outputs.append(self.transforms[i](args[i]))
         return tuple(outputs)
+
+
+class Identity(Transform):
+    def __call__(self, x):
+        return x

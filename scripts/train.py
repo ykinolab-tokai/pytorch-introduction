@@ -1,23 +1,35 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchaudio.transforms as audio_transforms
 
 from introduction.model import SimpleDNN
 from introduction.dataset import AcousticSceneDataset
 from introduction.trainer import ClassifierTrainer
+import introduction.transform as transform
 
 
 def get_data_loaders():
+    transforms = transform.Zip(
+        transform.Compose([
+            audio_transforms.Spectrogram(n_fft=512),
+            audio_transforms.AmplitudeToDB()
+        ]),
+        transform.Identity()
+    )
+
     trainset = AcousticSceneDataset(
         root="../data/small-acoustic-scenes",
         mode="train",
-        transforms=None
+        transforms=transforms
     )
     trainloader = torch.utils.data.DataLoader(
         trainset,
         batch_size=16,
         shuffle=True,
-        num_workers=4
+        num_workers=0
     )
 
     # Although the training dataset is also used for validation here,
@@ -25,13 +37,13 @@ def get_data_loaders():
     valset = AcousticSceneDataset(
         root="../data/small-acoustic-scenes",
         mode="train",
-        transforms=None
+        transforms=transforms
     )
     valloader = torch.utils.data.DataLoader(
         valset,
         batch_size=16,
         shuffle=False,
-        num_workers=4
+        num_workers=0
     )
 
     return trainloader, valloader
