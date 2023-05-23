@@ -46,13 +46,13 @@ def get_data_loaders():
         num_workers=0
     )
 
-    return trainloader, valloader
+    return trainloader, valloader, trainset.LABELS
 
 def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # 学習・検証データセットを読み込むクラス（DataLoaderクラス）を作る
-    trainloader, valloader = get_data_loaders()
+    trainloader, valloader, classes = get_data_loaders()
 
     # DNNを作る
     net = SimpleDNN()
@@ -71,7 +71,7 @@ def main() -> None:
         scheduler=schedular,
         device=device
     )
-    trainer.train(100, valloader)
+    trainer.train(100, valloader, classes)
 
     # モデル保存
     output_dir = Path("./result")
