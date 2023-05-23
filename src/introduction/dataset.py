@@ -38,7 +38,7 @@ class AcousticSceneDataset(torch.utils.data.Dataset):
         samples = []
         for label in self.LABELS:
             for p in sorted((self.root / self.mode / label).glob("*.wav")):
-                samples.append((p, self.label2int(label)))
+                samples.append((p, self.label2int[label]))
         
         return samples
     

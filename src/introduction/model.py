@@ -5,13 +5,14 @@ class SimpleDNN(nn.Module):
     def __init__(self, ):
         """DNNの層を定義
         """
+        super().__init__()
         self.net = nn.Sequential(
             nn.LazyConv2d(out_channels=16, kernel_size=5, padding=2, bias=False),
-            nn.LazyBatchNorm2d(num_features=16),
+            nn.LazyBatchNorm2d(),
             nn.ReLU(),
             nn.LazyConv2d(out_channels=16, kernel_size=5, padding=2, bias=False),
-            nn.LazyBatchNorm2d(num_features=16),
-            nn.ReLU()
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
             nn.AdaptiveAvgPool2d(1)
         )
         self.classifier = nn.LazyLinear(out_features=2)

@@ -2,16 +2,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from model import SimpleDNN
-from dataset import AcousticSceneDataset
-from trainer import ClassifierTrainer
+from introduction.model import SimpleDNN
+from introduction.dataset import AcousticSceneDataset
+from introduction.trainer import ClassifierTrainer
 
 
 def get_data_loaders():
     trainset = AcousticSceneDataset(
-        root="./data/small-acoustic-scenes",
+        root="../data/small-acoustic-scenes",
         mode="train",
-        transforms=
+        transforms=None
     )
     trainloader = torch.utils.data.DataLoader(
         trainset,
@@ -23,9 +23,9 @@ def get_data_loaders():
     # Although the training dataset is also used for validation here,
     # a validation dataset is generally different from a training dataset.
     valset = AcousticSceneDataset(
-        root="./data/small-acoustic-scenes",
+        root="../data/small-acoustic-scenes",
         mode="train",
-        transforms=
+        transforms=None
     )
     valloader = torch.utils.data.DataLoader(
         valset,
@@ -47,8 +47,8 @@ def main() -> None:
 
     # 損失関数やその他ハイパーパラメータの定義
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(lr=0.001)
-    schedular = optim.lr_scheduler.MultiStepLR(optimizer, 0.1, [50, 100])
+    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    schedular = optim.lr_scheduler.MultiStepLR(optimizer, [50, 100], gamma=0.1)
 
     # 学習
     trainer = ClassifierTrainer(
@@ -63,7 +63,7 @@ def main() -> None:
 
     # モデル保存
     output_dir = Path("./result")
-    if not output_dir.exists()
+    if not output_dir.exists():
         output_dir.mkdir(parents=True)
     torch.save(net.state_dict(), output_dir / "trained_weights.ph")
 
