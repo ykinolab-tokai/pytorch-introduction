@@ -1,60 +1,47 @@
 import time
 import argparse
 from pathlib import Path
-import numpy as np
-import matplotlib.pyplot as plt
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchaudio
-from torchsummary import summary
-import trainer
-import model
-import transform as mytf
-from dataset import AudioFolder, PreLoadAudioFolder
+import torchaudio.transforms as audio_transforms
+
+from introduction.model import SimpleDNN
+from introduction.dataset import AcousticSceneDataset
+from introduction.trainer import ClassifierTrainer
+import introduction.transform as transform
 
 
-def parse_cmd_line_arguments():
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--model', help='Model path',
-                        type=str,
-                        default='../model/trained_model.pth')
-    parser.add_argument('--data_dir', help='Directory for storing datasets.',
-                        type=str,
-                        default='../data/small-acoustic-scenes')
-    parser.add_argument('--batch_size', help='Batch size',
-                        type=int,
-                        default=4)
-    return parser.parse_args()
 
+def get_data_loaders():
+    transforms = transform.Zip(
+        transform.Compose([
+            audio_transforms.Resample(44100, 8000),
+            audio_transforms.Spectrogram(n_fft=512),
+            audio_transforms.AmplitudeToDB()
+        ]),
+        transform.Identity()
+    )
 
-def print_cmd_line_arguments(args):
-    print('-----Parameters-----')
-    for key, item in args.__dict__.items():
-        print(key, ': ', item)
-    print('--------------------')
+    testset = AcousticSceneDataset(
+        root="../data/small-acoustic-scenes",
+        mode="test",
+        transforms=transforms
+    )
+    testloader = torch.utils.data.DataLoader(
+        testset,
+        batch_size=16,
+        shuffle=False,
+        num_workers=0
+    )
 
-
-def get_data_loaders(path, batch_size):
-    p = Path(path)
-    p.mkdir(parents=True, exist_ok=True)
-
-    classes = ('car', 'home')
-    num_classes = len(classes)
-    transform = mytf.Compose([torchaudio.transforms.Resample(44100, 8000),
-                              torchaudio.transforms.Spectrogram(n_fft=512)])
-
-    # testset = AudioFolder(p / 'evaluate', transform=transform)
-    testset = PreLoadAudioFolder(p / 'evaluate', transform=transform)
-
-    loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=2)
-    return loader, num_classes, classes
+    return testloader, testset.LABELS
 
 
 def examples(loader, net, classes):
     dataiter = iter(loader)
-    waveforms, labels = dataiter.next()
+    waveforms, labels = next(dataiter)
     print('GroundTruth: ', ' '.join('%5s' % classes[labels[i]] for i in range(len(labels))))
 
     outputs = net(waveforms)
@@ -62,7 +49,8 @@ def examples(loader, net, classes):
     print('Predicted: ', ' '.join('%5s' % classes[predicted[i]] for i in range(len(labels))))
 
 
-def calculate_accuracy(loader, net, num_classes, classes):
+def calculate_accuracy(loader, net, classes):
+    num_classes = len(classes)
     class_correct = list(0. for i in range(num_classes))
     class_total = list(0. for i in range(num_classes))
     with torch.no_grad():
@@ -88,16 +76,13 @@ def calculate_accuracy(loader, net, num_classes, classes):
 
 
 if __name__ == "__main__":
-    args = parse_cmd_line_arguments()
-    print_cmd_line_arguments(args)
-    
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    loader, num_classes, classes = get_data_loaders(args.data_dir, args.batch_size)
+    loader, classes = get_data_loaders()
 
-    net = model.DCGANDiscriminator(num_classes=num_classes)
-    net.load_state_dict(torch.load(args.model))
+    net = SimpleDNN()
+    net.load_state_dict(torch.load("../model/trained_weights.pth"))
     net.eval()
 
     examples(loader, net, classes)
-    calculate_accuracy(loader, net, num_classes, classes)
+    calculate_accuracy(loader, net, classes)

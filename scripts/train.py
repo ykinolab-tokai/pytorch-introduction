@@ -14,6 +14,7 @@ import introduction.transform as transform
 def get_data_loaders():
     transforms = transform.Zip(
         transform.Compose([
+            audio_transforms.Resample(44100, 8000),
             audio_transforms.Spectrogram(n_fft=512),
             audio_transforms.AmplitudeToDB()
         ]),
@@ -58,9 +59,10 @@ def main() -> None:
     net = SimpleDNN()
 
     # 損失関数やその他ハイパーパラメータの定義
+    epochs = 50
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
-    schedular = optim.lr_scheduler.MultiStepLR(optimizer, [50, 100], gamma=0.1)
+    optimizer = optim.Adam(net.parameters(), lr=0.0005)
+    schedular = optim.lr_scheduler.MultiStepLR(optimizer, [epochs*2//4, epochs*3//4], gamma=0.1)
 
     # 学習
     trainer = ClassifierTrainer(
@@ -71,13 +73,13 @@ def main() -> None:
         scheduler=schedular,
         device=device
     )
-    trainer.train(100, valloader, classes)
+    trainer.train(epochs, valloader, classes)
 
     # モデル保存
-    output_dir = Path("./result")
+    output_dir = Path("../model")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
-    torch.save(net.state_dict(), output_dir / "trained_weights.ph")
+    torch.save(net.state_dict(), output_dir / "trained_weights.pth")
 
 
 if __name__ == "__main__":
